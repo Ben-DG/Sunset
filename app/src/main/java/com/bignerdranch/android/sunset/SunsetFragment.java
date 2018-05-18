@@ -3,6 +3,8 @@ package com.bignerdranch.android.sunset;
 import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.res.Resources;
 import android.os.Bundle;
 
@@ -10,6 +12,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 
 public class SunsetFragment extends Fragment {
@@ -23,6 +26,7 @@ public class SunsetFragment extends Fragment {
     private int mNightSkyColor;
     private boolean mHasSet;
     private AnimatorSet animatorSet;
+    private ObjectAnimator pulsate;
 
     public static SunsetFragment newInstance() {
         return new SunsetFragment();
@@ -46,14 +50,33 @@ public class SunsetFragment extends Fragment {
         mSceneView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!mHasSet)
+                if (!mHasSet) {
                     startSunsetAnimation();
-                else
+                    pulsate.cancel();
+                    mSunView.setScaleX(1.0f);
+                    mSunView.setScaleY(1.0f);
+                }
+                else {
                     startSunriseAnimation();
+                    pulsate.start();
+                }
             }
         });
 
+        setupPulsateAnimator();
+        pulsate.start();
+
         return view;
+    }
+
+    private void setupPulsateAnimator() {
+        pulsate = ObjectAnimator.ofPropertyValuesHolder(mSunView,
+                PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.1f)
+                , PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.1f))
+                .setDuration(2000);
+        pulsate.setRepeatCount(ObjectAnimator.INFINITE);
+        pulsate.setRepeatMode(ValueAnimator.REVERSE);
+        pulsate.setInterpolator(new AccelerateDecelerateInterpolator());
     }
 
     private void startSunriseAnimation() {
