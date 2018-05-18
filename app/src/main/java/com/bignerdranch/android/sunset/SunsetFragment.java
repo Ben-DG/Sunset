@@ -19,14 +19,16 @@ public class SunsetFragment extends Fragment {
 
     private View mSceneView;
     private View mSunView;
+    private View mReflectionView;
     private View mSkyView;
+    private View mSea;
 
     private int mBlueSkyColor;
     private int mSunsetSkyColor;
     private int mNightSkyColor;
     private boolean mHasSet;
-    private AnimatorSet animatorSet;
-    private ObjectAnimator pulsate;
+    // private AnimatorSet animatorSet;
+    private AnimatorSet pulsate;
 
     public static SunsetFragment newInstance() {
         return new SunsetFragment();
@@ -39,7 +41,9 @@ public class SunsetFragment extends Fragment {
 
         mSceneView = view;
         mSunView = view.findViewById(R.id.sun);
+        mReflectionView = view.findViewById(R.id.reflection);
         mSkyView = view.findViewById(R.id.sky);
+        mSea = view.findViewById(R.id.sea);
 
         Resources resources = getResources();
         mBlueSkyColor = resources.getColor(R.color.blue_sky);
@@ -52,9 +56,11 @@ public class SunsetFragment extends Fragment {
             public void onClick(View view) {
                 if (!mHasSet) {
                     startSunsetAnimation();
-                    pulsate.cancel();
+                    pulsate.end();
                     mSunView.setScaleX(1.0f);
                     mSunView.setScaleY(1.0f);
+                    mReflectionView.setScaleX(1.0f);
+                    mReflectionView.setScaleY(1.0f);
                 }
                 else {
                     startSunriseAnimation();
@@ -70,21 +76,39 @@ public class SunsetFragment extends Fragment {
     }
 
     private void setupPulsateAnimator() {
-        pulsate = ObjectAnimator.ofPropertyValuesHolder(mSunView,
+        ObjectAnimator pulsateSun = ObjectAnimator.ofPropertyValuesHolder(mSunView,
                 PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.1f)
                 , PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.1f))
                 .setDuration(2000);
-        pulsate.setRepeatCount(ObjectAnimator.INFINITE);
-        pulsate.setRepeatMode(ValueAnimator.REVERSE);
-        pulsate.setInterpolator(new AccelerateDecelerateInterpolator());
+        pulsateSun.setRepeatCount(ObjectAnimator.INFINITE);
+        pulsateSun.setRepeatMode(ValueAnimator.REVERSE);
+        pulsateSun.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        ObjectAnimator pulsateReflection = ObjectAnimator.ofPropertyValuesHolder(mReflectionView,
+                PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.1f)
+                , PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.1f))
+                .setDuration(2000);
+        pulsateReflection.setRepeatCount(ObjectAnimator.INFINITE);
+        pulsateReflection.setRepeatMode(ValueAnimator.REVERSE);
+        pulsateReflection.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        pulsate = new AnimatorSet();
+        pulsate.play(pulsateSun).with(pulsateReflection);
     }
 
     private void startSunriseAnimation() {
         float sunYStart = mSkyView.getHeight();
         float sunYEnd = mSkyView.getHeight() / 2 - mSunView.getHeight() / 2; // Middle of screen
+        float reflectionYStart = 0 - mReflectionView.getHeight();
+        float reflectionYEnd =  mSea.getHeight() / 2 - mReflectionView.getHeight() / 2;
 
         ObjectAnimator heightAnimator = ObjectAnimator
                 .ofFloat(mSunView, "Y", sunYStart, sunYEnd)
+                .setDuration(3000);
+        heightAnimator.setInterpolator(new AccelerateInterpolator());
+
+        ObjectAnimator heightRAnimator = ObjectAnimator
+                .ofFloat(mReflectionView, "Y", reflectionYStart, reflectionYEnd)
                 .setDuration(3000);
         heightAnimator.setInterpolator(new AccelerateInterpolator());
 
@@ -97,9 +121,10 @@ public class SunsetFragment extends Fragment {
                 .ofInt(mSkyView, "backgroundColor", mNightSkyColor, mSunsetSkyColor);
         nightSkyAnimator.setEvaluator(new ArgbEvaluator());
 
-        animatorSet = new AnimatorSet();
+        AnimatorSet animatorSet = new AnimatorSet();
         animatorSet
                 .play(heightAnimator)
+                .with(heightRAnimator)
                 .with(sunsetSkyAnimator)
                 .after(nightSkyAnimator);
 
@@ -110,9 +135,16 @@ public class SunsetFragment extends Fragment {
     private void startSunsetAnimation() {
         float sunYStart = mSunView.getTop();
         float sunYEnd = mSkyView.getHeight();
+        float reflectionYStart = mReflectionView.getTop();
+        float reflectionYEnd = 0 - mReflectionView.getHeight();
 
         ObjectAnimator heightAnimator = ObjectAnimator
                 .ofFloat(mSunView, "Y", sunYStart, sunYEnd)
+                .setDuration(3000);
+        heightAnimator.setInterpolator(new AccelerateInterpolator());
+
+        ObjectAnimator heightRAnimator = ObjectAnimator
+                .ofFloat(mReflectionView, "Y", reflectionYStart, reflectionYEnd)
                 .setDuration(3000);
         heightAnimator.setInterpolator(new AccelerateInterpolator());
 
@@ -125,9 +157,10 @@ public class SunsetFragment extends Fragment {
                 .ofInt(mSkyView, "backgroundColor", mSunsetSkyColor, mNightSkyColor);
         nightSkyAnimator.setEvaluator(new ArgbEvaluator());
 
-        animatorSet = new AnimatorSet();
+        AnimatorSet animatorSet = new AnimatorSet();
         animatorSet
                 .play(heightAnimator)
+                .with(heightRAnimator)
                 .with(sunsetSkyAnimator)
                 .before(nightSkyAnimator);
 
